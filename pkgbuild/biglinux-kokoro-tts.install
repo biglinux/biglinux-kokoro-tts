@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# biglinux-kokoro-tts.install — Package install hooks
+
+blueDark="\e[1;38;5;33m"
+lightBlue="\e[1;38;5;39m"
+cyan="\e[1;38;5;45m"
+white="\e[1;97m"
+reset="\e[0m"
+
+printMsg() {
+    local message=$1
+    echo -e "${blueDark}[${lightBlue}biglinux-kokoro-tts${blueDark}]${reset} ${cyan}→${reset} ${white}${message}${reset}"
+}
+
+post_install() {
+    printMsg "Kokoro TTS instalado com sucesso!"
+    printMsg ""
+    printMsg "Para ativar como TTS padrão no speech-dispatcher:"
+    printMsg "  Edite /etc/speech-dispatcher/speechd.conf"
+    printMsg "  Adicione/altere: DefaultModule biglinux-kokoro"
+    printMsg "  Adicione: AddModule \"biglinux-kokoro\" \"sd_generic\" \"biglinux-kokoro.conf\""
+    printMsg ""
+    printMsg "Para testar (abra um novo terminal):"
+    printMsg "  koko text 'Olá, bem-vindo ao BigLinux!' --lan pt --style pf_dora"
+    printMsg ""
+    printMsg "Idiomas com voz neural: en_US, en_GB, es_ES, fr_FR, pt_BR, it_IT, ja_JP, hi_IN, zh_CN"
+    printMsg "Demais idiomas usam eSpeak-NG como fallback."
+    printMsg ""
+    printMsg "Nota: Abra um novo terminal para as variáveis KOKO_* ficarem disponíveis."
+}
+
+post_upgrade() {
+    printMsg "Kokoro TTS atualizado."
+    printMsg "Verifique se há .pacnew em /etc/speech-dispatcher/modules/"
+}
+
+pre_remove() {
+    printMsg "Removendo Kokoro TTS..."
+}
+
+post_remove() {
+    printMsg "Kokoro TTS removido."
+    printMsg "Se deseja reverter o speech-dispatcher, edite /etc/speech-dispatcher/speechd.conf"
+}
+

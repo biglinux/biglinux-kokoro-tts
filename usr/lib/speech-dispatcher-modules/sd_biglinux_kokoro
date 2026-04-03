@@ -1,0 +1,105 @@
+#!/bin/bash
+#
+# sd_biglinux_kokoro — Speech-dispatcher module for BigLinux
+# Routes TTS between kokorox (Kokoro) and espeak-ng based on system locale
+#
+# Installed at: /usr/lib/speech-dispatcher-modules/sd_biglinux_kokoro
+#
+
+CONFIG="/etc/biglinux-tts/locale-voice-map.conf"
+KOKO="/usr/bin/koko"
+MODEL="/usr/share/biglinux-kokoro-tts/model/kokoro-v1.0.int8.onnx"
+VOICES="/usr/share/biglinux-kokoro-tts/voices/voices-v1.0.bin"
+
+# Detect system locale
+SYSTEM_LOCALE="${LANG%%.*}"          # e.g. pt_BR.UTF-8 → pt_BR
+SYSTEM_LOCALE="${SYSTEM_LOCALE%%@*}" # strip @euro etc
+
+# Look up voice config for the given locale
+get_voice_config() {
+    local locale="$1"
+    local entry
+
+    # Try exact locale (e.g. pt_BR)
+    entry=$(grep -m1 "^${locale} " "$CONFIG" 2>/dev/null | sed 's/.*= *//')
+
+    # Try base language only (e.g. pt → match pt_BR)
+    if [[ -z "$entry" ]]; then
+        local lang="${locale%%_*}"
+        entry=$(grep -m1 "^${lang}_" "$CONFIG" 2>/dev/null | sed 's/.*= *//')
+    fi
+
+    # Universal fallback
+    if [[ -z "$entry" ]]; then
+        entry=$(grep -m1 '^\*' "$CONFIG" 2>/dev/null | sed 's/.*= *//')
+    fi
+
+    # Last resort
+    if [[ -z "$entry" ]]; then
+        entry="espeak:en"
+    fi
+
+    echo "$entry"
+}
+
+# Speak using kokorox (koko)
+speak_kokoro() {
+    local text="$1"
+    local voice="$2"
+    local lang_code="$3"
+
+    # Generate WAV with koko, then play via paplay or aplay
+    local tmpwav
+    tmpwav=$(mktemp /tmp/biglinux-koko-XXXXXX.wav)
+
+    "$KOKO" text "$text" \
+        -m "$MODEL" \
+        -d "$VOICES" \
+        --lan "$lang_code" \
+        --style "$voice" \
+        --force-style \
+        -o "$tmpwav" \
+        2>/dev/null
+
+    if [[ -f "$tmpwav" && -s "$tmpwav" ]]; then
+        paplay "$tmpwav" 2>/dev/null || aplay -q "$tmpwav" 2>/dev/null
+    fi
+    rm -f "$tmpwav"
+}
+
+# Speak using eSpeak-NG
+speak_espeak() {
+    local text="$1"
+    local voice="$2"
+    espeak-ng -v "$voice" "$text" 2>/dev/null
+}
+
+# ─── Main ──────────────────────────────────────────────────
+
+main() {
+    local text="$1"
+
+    # If no argument given, read from stdin
+    if [[ -z "$text" ]]; then
+        read -r text
+    fi
+
+    [[ -z "$text" ]] && exit 0
+
+    local config
+    config=$(get_voice_config "$SYSTEM_LOCALE")
+
+    local engine voice lang_code
+    IFS=':' read -r engine voice lang_code <<< "$config"
+
+    case "$engine" in
+        kokoro)
+            speak_kokoro "$text" "$voice" "$lang_code"
+            ;;
+        espeak|*)
+            speak_espeak "$text" "$voice"
+            ;;
+    esac
+}
+
+main "$@"

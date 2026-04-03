@@ -1,42 +1,78 @@
-# Maintainer: Barnabé di Kartola <barnabedikartola@gmail.com>
+# Maintainer: Tales A. Mendonça <talesam@gmail.com>
+# BigLinux Kokoro TTS — Neural voice for accessibility
 
-pkgname=biglinux-package-template
-pkgdesc="Package template for biglinux"
-# depends=('')
-# makedepends=('')
-# conflicts=('')
-pkgver=$(date +%y.%m.%d)
-pkgrel=$(date +%H%M)
-arch=('any')
-license=('GPL3')
-url="https://github.com/biglinux/$pkgname"
-provides=("$pkgname")
-source=("git+${url}.git")
-md5sums=('SKIP')
-if [ -e "${pkgname}.install" ];then
-    install=${pkgname}.install
-elif [ -e "pkgbuild.install" ];then
-    install=pkgbuild.install
-fi
+pkgname=biglinux-kokoro-tts
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Kokoro TTS neural voice for BigLinux accessibility (kokorox Rust + ONNX)"
+arch=('x86_64')
+url="https://github.com/byteowlz/kokorox"
+license=('GPL3' 'Apache-2.0')
+depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher')
+makedepends=('rust' 'cargo' 'git')
+optdepends=('orca: GNOME screen reader')
+install=biglinux-kokoro-tts.install
+
+# Sources: kokorox (Rust), ONNX int8 model, full voices (54 voices, 8 languages)
+source=(
+    "kokorox::git+https://github.com/byteowlz/kokorox.git"
+    "kokoro-v1.0.int8.onnx::https://github.com/thewh1teagle/kokoro-onnx/releases/download/v0.4.5/kokoro-v1.0.int8.onnx"
+    "voices-v1.0.bin::https://github.com/thewh1teagle/kokoro-onnx/releases/download/v0.4.5/voices-v1.0.bin"
+    "git+https://github.com/big-comm/${pkgname}.git"
+)
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP')
+
+# Backup files (pacman generates .pacnew instead of overwriting)
+backup=('etc/speech-dispatcher/modules/biglinux-kokoro.conf'
+        'etc/profile.d/biglinux-kokoro-tts.sh'
+        'usr/share/biglinux-kokoro-tts/locale-voice-map.conf')
+
+build() {
+    cd "$srcdir/kokorox"
+    cargo build --release
+}
 
 package() {
-    # Verify default folder
-    if [ -d "${srcdir}/${pkgname}/${pkgname}" ]; then
-        InternalDir="${srcdir}/${pkgname}/${pkgname}"
+    # Install build artifacts (before srcdir reassignment)
+    install -Dm755 "$srcdir/kokorox/target/release/koko" \
+        "$pkgdir/usr/bin/koko"
+    install -Dm644 "$srcdir/kokoro-v1.0.int8.onnx" \
+        "$pkgdir/usr/share/biglinux-kokoro-tts/model/kokoro-v1.0.int8.onnx"
+    install -Dm644 "$srcdir/voices-v1.0.bin" \
+        "$pkgdir/usr/share/biglinux-kokoro-tts/voices/voices-v1.0.bin"
+
+    cd "${srcdir}/${pkgname}"
+
+    # Determine the correct source directory
+    if [ -d "${pkgname}" ]; then
+        srcdir="${srcdir}/${pkgname}/${pkgname}"
     else
-        InternalDir="${srcdir}/${pkgname}"
+        srcdir="${srcdir}/${pkgname}"
     fi
 
-    # Copy files
-    if [ -d "${InternalDir}/usr" ]; then
-        cp -r "${InternalDir}/usr" "${pkgdir}/"
+    # Install files
+    local dirs=("usr" "etc" "opt")
+    for dir in "${dirs[@]}"; do
+        if [ -d "${srcdir}/${dir}" ]; then
+            cp -a "${srcdir}/${dir}" "${pkgdir}/"
+        fi
+    done
+
+    # Symlink for locale-voice-map.conf convenience path
+    install -dm755 "$pkgdir/etc/biglinux-tts"
+    ln -sf /usr/share/biglinux-kokoro-tts/locale-voice-map.conf \
+        "$pkgdir/etc/biglinux-tts/locale-voice-map.conf"
+
+    # Install license file if present
+    if [ -f "LICENSE" ]; then
+        install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
     fi
 
-    if [ -d "${InternalDir}/etc" ]; then
-        cp -r "${InternalDir}/etc" "${pkgdir}/"
-    fi
-
-    if [ -d "${InternalDir}/opt" ]; then
-        cp -r "${InternalDir}/opt" "${pkgdir}/"
+    # Install documentation if present
+    if [ -f "README.md" ]; then
+        install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
     fi
 }
