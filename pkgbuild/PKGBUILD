@@ -23,7 +23,7 @@ source=(
     "kokorox::git+https://github.com/byteowlz/kokorox.git"
     "${_model_onnx}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_model_onnx}"
     "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_voices_bin}"
-    "git+https://github.com/big-comm/${pkgname}.git"
+    "git+https://github.com/biglinux/${pkgname}.git"
 )
 sha256sums=('SKIP'
             'SKIP'
