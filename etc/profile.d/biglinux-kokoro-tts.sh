@@ -10,5 +10,5 @@
 #   4. Local config (./config.toml)
 #   5. User config (~/.config/koko/config.toml)
 
-export KOKO_MODEL_PATH="/usr/share/biglinux-kokoro-tts/model/kokoro-v1.0.int8.onnx"
-export KOKO_DATA_PATH="/usr/share/biglinux-kokoro-tts/voices/voices-v1.0.bin"
+export KOKO_MODEL_PATH="/usr/share/biglinux-kokoro-tts/model/model.onnx"
+export KOKO_DATA_PATH="/usr/share/biglinux-kokoro-tts/voices/voices.bin"

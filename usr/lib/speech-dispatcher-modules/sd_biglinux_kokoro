@@ -8,8 +8,8 @@
 
 CONFIG="/etc/biglinux-tts/locale-voice-map.conf"
 KOKO="/usr/bin/koko"
-MODEL="/usr/share/biglinux-kokoro-tts/model/kokoro-v1.0.int8.onnx"
-VOICES="/usr/share/biglinux-kokoro-tts/voices/voices-v1.0.bin"
+MODEL="/usr/share/biglinux-kokoro-tts/model/model.onnx"
+VOICES="/usr/share/biglinux-kokoro-tts/voices/voices.bin"
 
 # Detect system locale
 SYSTEM_LOCALE="${LANG%%.*}"          # e.g. pt_BR.UTF-8 → pt_BR

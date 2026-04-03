@@ -7,17 +7,22 @@ pkgrel=1
 pkgdesc="Kokoro TTS neural voice for BigLinux accessibility (kokorox Rust + ONNX)"
 arch=('x86_64')
 url="https://github.com/byteowlz/kokorox"
-license=('GPL3' 'Apache-2.0')
+license=('GPL-3.0-or-later' 'Apache-2.0')
 depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher')
 makedepends=('rust' 'cargo' 'git')
 optdepends=('orca: GNOME screen reader')
 install=biglinux-kokoro-tts.install
 
+# ── Model version (update here when upstream releases new model) ──
+_modelver=1.0
+_model_onnx="kokoro-v${_modelver}.int8.onnx"
+_voices_bin="voices-v${_modelver}.bin"
+
 # Sources: kokorox (Rust), ONNX int8 model, full voices (54 voices, 8 languages)
 source=(
     "kokorox::git+https://github.com/byteowlz/kokorox.git"
-    "kokoro-v1.0.int8.onnx::https://github.com/thewh1teagle/kokoro-onnx/releases/download/v0.4.5/kokoro-v1.0.int8.onnx"
-    "voices-v1.0.bin::https://github.com/thewh1teagle/kokoro-onnx/releases/download/v0.4.5/voices-v1.0.bin"
+    "${_model_onnx}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_model_onnx}"
+    "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_voices_bin}"
     "git+https://github.com/big-comm/${pkgname}.git"
 )
 sha256sums=('SKIP'
@@ -39,10 +44,10 @@ package() {
     # Install build artifacts (before srcdir reassignment)
     install -Dm755 "$srcdir/kokorox/target/release/koko" \
         "$pkgdir/usr/bin/koko"
-    install -Dm644 "$srcdir/kokoro-v1.0.int8.onnx" \
-        "$pkgdir/usr/share/biglinux-kokoro-tts/model/kokoro-v1.0.int8.onnx"
-    install -Dm644 "$srcdir/voices-v1.0.bin" \
-        "$pkgdir/usr/share/biglinux-kokoro-tts/voices/voices-v1.0.bin"
+    install -Dm644 "$srcdir/${_model_onnx}" \
+        "$pkgdir/usr/share/biglinux-kokoro-tts/model/model.onnx"
+    install -Dm644 "$srcdir/${_voices_bin}" \
+        "$pkgdir/usr/share/biglinux-kokoro-tts/voices/voices.bin"
 
     cd "${srcdir}/${pkgname}"
 
