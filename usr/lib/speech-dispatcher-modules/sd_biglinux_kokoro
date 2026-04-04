@@ -15,6 +15,16 @@ VOICES="/usr/share/biglinux-kokoro-tts/voices/voices.bin"
 SYSTEM_LOCALE="${LANG%%.*}"          # e.g. pt_BR.UTF-8 → pt_BR
 SYSTEM_LOCALE="${SYSTEM_LOCALE%%@*}" # strip @euro etc
 
+# Override with KOKO_LANG if set by speech-dispatcher ($LANGUAGE from SSIP client)
+# KOKO_LANG is a 2-letter code like "pt", "en", "es"
+if [[ -n "$KOKO_LANG" && "$KOKO_LANG" != "nil" && "$KOKO_LANG" != "NULL" ]]; then
+    # Map 2-letter SSIP code to best matching locale in the voice map
+    _match=$(grep -m1 "^${KOKO_LANG}_" "$CONFIG" 2>/dev/null | cut -d= -f1 | tr -d ' ')
+    if [[ -n "$_match" ]]; then
+        SYSTEM_LOCALE="$_match"
+    fi
+fi
+
 # Look up voice config for the given locale
 get_voice_config() {
     local locale="$1"

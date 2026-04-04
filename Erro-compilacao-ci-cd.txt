@@ -1,0 +1,132 @@
+  Compiling kokorox-websocket v0.2.3 (/__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/kokorox-websocket)
+   Compiling shellexpand v3.1.1
+   Compiling koko v0.2.3 (/__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/koko)
+error: linking with `x86_64-linux-gnu-gcc` failed: exit status: 1
+  |
+  = note:  "x86_64-linux-gnu-gcc" "-m64" "/__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/rustc4bEFEI/symbols.o" "<17 object files omitted>" "-Wl,--as-needed" "-Wl,-Bstatic" "/__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/{libkokorox_websocket-f7aeed19f6e5bb2d,libuuid-9e8d0abc4efb9c1d,libgetrandom-167456bddac2de22,libtokio_tungstenite-3cb4dd1f2ccd520f,libtungstenite-2b1370c15e1e3c5e,libkokorox_openai-88e74cbd62b5a9d0,libtower_http-cb6dd9aa95c3d3cc,libaxum-b8f1a339d24fc735,libserde_path_to_error-35542d1e3e11b791,libmatchit-7619a72886d68d41,libaxum_core-2f010286deb0e6ce,libctrlc-55d7b4fc6570c7ab,libnix-65b7d51b35c0e84b,libshellexpand-dd30a7130cec0ec7,libconfig-146218c26b1f518b,libpathdiff-f85281ecb9df818d,libjson5-6a147fbfd07379b6,libron-7dd75fc9450a7a12,libtoml-781ab043f27d0853,libtoml_edit-cea9649f37967ac5,libserde_spanned-9f3aeadfbb976aca,libwinnow-d4c
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: ld.lld: error: undefined symbol: ZSTD_freeDCtx
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(_$LT$zstd_safe..DCtx$u20$as$u20$core..ops..drop..Drop$GT$::drop::h27bff4c6c61f026b) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          
+          ld.lld: error: undefined symbol: ZSTD_createDCtx
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(_$LT$zstd_safe..DCtx$u20$as$u20$core..default..Default$GT$::default::h29d558c89cb850ed) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          
+          ld.lld: error: undefined symbol: ZSTD_isError
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::parse_code::hf3f7f0f299182a42) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::DCtx::load_dictionary::h019da041078e94d7) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::DCtx::init::hc175d1f2460288f5) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          >>> referenced 1 more times
+          
+          ld.lld: error: undefined symbol: ZSTD_getErrorName
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::get_error_name::h6ed4516db35eeb02) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          
+          ld.lld: error: undefined symbol: ZSTD_DCtx_loadDictionary
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::DCtx::load_dictionary::h019da041078e94d7) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          
+          ld.lld: error: undefined symbol: ZSTD_initDStream
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::DCtx::init::hc175d1f2460288f5) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          
+          ld.lld: error: undefined symbol: ZSTD_DCtx_reset
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::DCtx::reset::hfb931db427490d80) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          
+          ld.lld: error: undefined symbol: ZSTD_DStreamInSize
+          >>> referenced by zstd_safe.6712cf3fc32bdfcc-cgu.0
+          >>>               zstd_safe-fa92e9712d53623e.zstd_safe.6712cf3fc32bdfcc-cgu.0.rcgu.o:(zstd_safe::DCtx::in_size::h0add1d8c0519c417) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libzstd_safe-fa92e9712d53623e.rlib
+          
+          ld.lld: error: undefined symbol: ZSTD_decompressStream
+          >>> referenced by include_flate_compress.363bb5910e7ddced-cgu.2
+          >>>               include_flate_compress-190a91e9d9dd14de.include_flate_compress.363bb5910e7ddced-cgu.2.rcgu.o:(_$LT$zstd..stream..zio..reader..Reader$LT$R$C$D$GT$$u20$as$u20$std..io..Read$GT$::read::hf8834ce0905b1c25) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libinclude_flate_compress-190a91e9d9dd14de.rlib
+          >>> referenced by include_flate_compress.363bb5910e7ddced-cgu.2
+          >>>               include_flate_compress-190a91e9d9dd14de.include_flate_compress.363bb5910e7ddced-cgu.2.rcgu.o:(_$LT$zstd..stream..zio..reader..Reader$LT$R$C$D$GT$$u20$as$u20$std..io..Read$GT$::read::hf8834ce0905b1c25) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libinclude_flate_compress-190a91e9d9dd14de.rlib
+          
+          ld.lld: error: undefined symbol: espeak_Initialize
+          >>> referenced by espeak_rs.fdf4882bd321192b-cgu.2
+          >>>               espeak_rs-088c794839af1743.espeak_rs.fdf4882bd321192b-cgu.2.rcgu.o:(core::ops::function::FnOnce::call_once::h363b7e84dd4c6e00) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libespeak_rs-088c794839af1743.rlib
+          
+          ld.lld: error: undefined symbol: espeak_SetVoiceByName
+          >>> referenced by espeak_rs.fdf4882bd321192b-cgu.2
+          >>>               espeak_rs-088c794839af1743.espeak_rs.fdf4882bd321192b-cgu.2.rcgu.o:(espeak_rs::_text_to_phonemes::he4019c75f31ab320) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libespeak_rs-088c794839af1743.rlib
+          
+          ld.lld: error: undefined symbol: espeak_TextToPhonemes
+          >>> referenced by espeak_rs.fdf4882bd321192b-cgu.2
+          >>>               espeak_rs-088c794839af1743.espeak_rs.fdf4882bd321192b-cgu.2.rcgu.o:(espeak_rs::_text_to_phonemes::he4019c75f31ab320) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libespeak_rs-088c794839af1743.rlib
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__LIMB_is_zero
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(core::ops::function::FnOnce::call_once::h4a7af3fca653424e) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.13
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.13.rcgu.o:(ring::limb::parse_***_endian_in_range_and_pad_consttime::hbbd89ee415c6204d) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.11
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.11.rcgu.o:(ring::ec::suite_b::ecdsa::signing::EcdsaKeyPair::sign::h7322c0d62db2e384) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced 17 more times
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__p256_scalar_mul_mont
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(core::ops::function::FnOnce::call_once::h4a7af3fca653424e) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::p256_scalar_inv_to_mont::h422f0f0a910fd511) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::SCALAR_OPS::ha62b5e2b2f56c5f7) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__LIMBS_less_than
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::arithmetic::***int::boxed_limbs::BoxedLimbs$LT$M$GT$::from_be_bytes_padded_less_than::h785b17c61dffe962) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.14
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.14.rcgu.o:(ring::arithmetic::***int::modulus::OwnedModulus$LT$M$GT$::to_elem::hde306465c5e1471a) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.13
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.13.rcgu.o:(ring::limb::parse_***_endian_in_range_and_pad_consttime::hbbd89ee415c6204d) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced 3 more times
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__p256_point_mul_base_vartime
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::twin_mul_nistz256::h854c30743d1cd071) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__p256_point_mul
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::twin_mul_nistz256::h854c30743d1cd071) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::PRIVATE_KEY_OPS::h9610ee66d9ffd19a) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__p256_point_add
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::twin_mul_nistz256::h854c30743d1cd071) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::PRIVATE_KEY_OPS::h9610ee66d9ffd19a) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__p256_sqr_mont
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::p256_elem_inv_squared::h35ea46de9050ba2c) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::COMMON_OPS::hc44111e326b8d461) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          
+          ld.lld: error: undefined symbol: ring_core_0_17_14__p256_mul_mont
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::p256_elem_inv_squared::h35ea46de9050ba2c) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          >>> referenced by ring.a4fb38dcd33af5aa-cgu.15
+          >>>               ring-870870efeb58997c.ring.a4fb38dcd33af5aa-cgu.15.rcgu.o:(ring::ec::suite_b::ops::p256::COMMON_OPS::hc44111e326b8d461) in archive /__w/build-package/build-package/source_repo/pkgbuild/src/kokorox-5d87800875ef15194aeedcf483e9e0db2c56c87b/target/release/deps/libring-870870efeb58997c.rlib
+          
+          ld.lld: error: too many errors emitted, stopping now (use --error-limit=0 to see all errors)
+          collect2: error: ld returned 1 exit status
+          
+error: could not compile `koko` (bin "koko") due to 1 previous error
+==> ERROR: A failure occurred in build().
+    Aborting...
+BP=>error: Build with makepkg failed.
+Error: Process completed with exit code 1.
+Run # Send a Telegram alert if the build fails
+################################################################################
+BP=>[WARNING] → 🚨 FAILED to create package:
+Job: #1728
+Package: ***linux-kokoro-tts
+Branch: main
+Error URL: https://github.com/***-comm/build-package/actions/runs/23985900668
+🚨 FAILED to create package:

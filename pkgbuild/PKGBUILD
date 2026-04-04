@@ -9,7 +9,7 @@ arch=('x86_64')
 url="https://github.com/byteowlz/kokorox"
 license=('GPL-3.0-or-later' 'Apache-2.0')
 depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher')
-makedepends=('rust' 'cargo' 'clang' 'cmake')
+makedepends=('rust' 'cargo' 'clang' 'cmake' 'zstd')
 optdepends=('orca: GNOME screen reader')
 install=biglinux-kokoro-tts.install
 
@@ -79,11 +79,20 @@ build() {
 
     # espeak-rs-sys bundles espeak-ng C sources with sprintf buffers that are too
     # small for _FORTIFY_SOURCE runtime checks → abort during data generation.
-    # Replace the combined -Wp,-D_FORTIFY_SOURCE=2,-D_GLIBCXX_ASSERTIONS with
-    # just the assertions flag (preserving all other flags).
+    # Strip _FORTIFY_SOURCE in all common formats from compiler flags.
     CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=?,-D_GLIBCXX_ASSERTIONS/-D_GLIBCXX_ASSERTIONS}"
+    CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=?/}"
+    CFLAGS="${CFLAGS//-D_FORTIFY_SOURCE=?/}"
     CXXFLAGS="${CXXFLAGS//-Wp,-D_FORTIFY_SOURCE=?,-D_GLIBCXX_ASSERTIONS/-D_GLIBCXX_ASSERTIONS}"
+    CXXFLAGS="${CXXFLAGS//-Wp,-D_FORTIFY_SOURCE=?/}"
+    CXXFLAGS="${CXXFLAGS//-D_FORTIFY_SOURCE=?/}"
     export CFLAGS CXXFLAGS
+
+    # Force GNU linker to avoid link-order issues with ld.lld
+    export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C link-arg=-fuse-ld=bfd"
+
+    # Force vendored zstd to avoid system static library dependency
+    export ZSTD_SYS_USE_PKG_CONFIG=0
 
     cargo build --release
 }
