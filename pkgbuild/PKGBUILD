@@ -9,7 +9,7 @@ arch=('x86_64')
 url="https://github.com/byteowlz/kokorox"
 license=('GPL-3.0-or-later' 'Apache-2.0')
 depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher')
-makedepends=('rust' 'cargo' 'git')
+makedepends=('rust' 'cargo' 'git' 'clang')
 optdepends=('orca: GNOME screen reader')
 install=biglinux-kokoro-tts.install
 
