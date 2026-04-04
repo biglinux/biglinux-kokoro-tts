@@ -9,7 +9,7 @@ arch=('x86_64')
 url="https://github.com/byteowlz/kokorox"
 license=('GPL-3.0-or-later' 'Apache-2.0')
 depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher')
-makedepends=('rust' 'cargo' 'git' 'clang' 'cmake')
+makedepends=('rust' 'cargo' 'clang' 'cmake')
 optdepends=('orca: GNOME screen reader')
 install=biglinux-kokoro-tts.install
 
@@ -19,17 +19,15 @@ _model_onnx="kokoro-v${_modelver}.int8.onnx"
 _voices_bin="voices-v${_modelver}.bin"
 
 # ── kokorox version ──
-_kokorocommit=5d87800
+_kokorocommit=5d87800875ef15194aeedcf483e9e0db2c56c87b
 
 # Sources: kokorox (Rust), ONNX int8 model, full voices (54 voices, 8 languages)
 source=(
     "kokorox-${_kokorocommit}.tar.gz::https://github.com/byteowlz/kokorox/archive/${_kokorocommit}.tar.gz"
     "${_model_onnx}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_model_onnx}"
     "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_voices_bin}"
-    "git+https://github.com/biglinux/${pkgname}.git"
 )
 sha256sums=('SKIP'
-            'SKIP'
             'SKIP'
             'SKIP')
 
@@ -38,34 +36,73 @@ backup=('etc/speech-dispatcher/modules/biglinux-kokoro.conf'
         'etc/profile.d/biglinux-kokoro-tts.sh'
         'usr/share/biglinux-kokoro-tts/locale-voice-map.conf')
 
+prepare() {
+    cd "$srcdir/kokorox-${_kokorocommit}"
+
+    # Vendor crate dependencies locally
+    cargo vendor "$srcdir/vendor"
+
+    # Patch espeak-rs-sys: NYC accent phoneme data causes compile errors
+    # (upstream bug in espeak-rs-sys 0.1.9 — vendored espeak-ng phsource is incompatible)
+    # Remove the phonemetable + include lines from the master phonemes file.
+    local phonemes="$srcdir/vendor/espeak-rs-sys/espeak-ng/phsource/phonemes"
+    if [[ -f "$phonemes" ]]; then
+        sed -i '/^phonemetable en-us-nyc/d; /^include ph_english_us_nyc/d' "$phonemes"
+    fi
+
+    # Patch espeak-rs-sys: increase N_PATH_HOME from 160 to 512
+    # The default 160 bytes is too small for the build path used by cargo/cmake.
+    local speech_h="$srcdir/vendor/espeak-rs-sys/espeak-ng/src/libespeak-ng/speech.h"
+    if [[ -f "$speech_h" ]]; then
+        sed -i 's/#define N_PATH_HOME_DEF  160/#define N_PATH_HOME_DEF  512/' "$speech_h"
+    fi
+
+    # Update checksum so cargo accepts patched vendor files
+    local cksum_file="$srcdir/vendor/espeak-rs-sys/.cargo-checksum.json"
+    if [[ -f "$cksum_file" ]]; then
+        sed -i 's/"files":{[^}]*}/"files":{}/' "$cksum_file"
+    fi
+
+    # Configure cargo to use vendored sources
+    mkdir -p .cargo
+    cat > .cargo/config.toml << EOF
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "$srcdir/vendor"
+EOF
+}
+
 build() {
-    cd "$srcdir/kokorox-${_kokorocommit}"*
+    cd "$srcdir/kokorox-${_kokorocommit}"
+
+    # espeak-rs-sys bundles espeak-ng C sources with sprintf buffers that are too
+    # small for _FORTIFY_SOURCE runtime checks → abort during data generation.
+    # Replace the combined -Wp,-D_FORTIFY_SOURCE=2,-D_GLIBCXX_ASSERTIONS with
+    # just the assertions flag (preserving all other flags).
+    CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=?,-D_GLIBCXX_ASSERTIONS/-D_GLIBCXX_ASSERTIONS}"
+    CXXFLAGS="${CXXFLAGS//-Wp,-D_FORTIFY_SOURCE=?,-D_GLIBCXX_ASSERTIONS/-D_GLIBCXX_ASSERTIONS}"
+    export CFLAGS CXXFLAGS
+
     cargo build --release
 }
 
 package() {
-    # Install build artifacts (before srcdir reassignment)
-    install -Dm755 "$srcdir"/kokorox-${_kokorocommit}*/target/release/koko \
+    # Install build artifacts
+    install -Dm755 "$srcdir/kokorox-${_kokorocommit}/target/release/koko" \
         "$pkgdir/usr/bin/koko"
     install -Dm644 "$srcdir/${_model_onnx}" \
         "$pkgdir/usr/share/biglinux-kokoro-tts/model/model.onnx"
     install -Dm644 "$srcdir/${_voices_bin}" \
         "$pkgdir/usr/share/biglinux-kokoro-tts/voices/voices.bin"
 
-    cd "${srcdir}/${pkgname}"
-
-    # Determine the correct source directory
-    if [ -d "${pkgname}" ]; then
-        srcdir="${srcdir}/${pkgname}/${pkgname}"
-    else
-        srcdir="${srcdir}/${pkgname}"
-    fi
-
-    # Install files
+    # Install config files from repo root (startdir/../ = repo checkout root)
+    local repodir="$startdir/.."
     local dirs=("usr" "etc" "opt")
     for dir in "${dirs[@]}"; do
-        if [ -d "${srcdir}/${dir}" ]; then
-            cp -a "${srcdir}/${dir}" "${pkgdir}/"
+        if [ -d "${repodir}/${dir}" ]; then
+            cp -a "${repodir}/${dir}" "${pkgdir}/"
         fi
     done
 
@@ -75,12 +112,7 @@ package() {
         "$pkgdir/etc/biglinux-tts/locale-voice-map.conf"
 
     # Install license file if present
-    if [ -f "LICENSE" ]; then
-        install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-    fi
-
-    # Install documentation if present
-    if [ -f "README.md" ]; then
-        install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+    if [ -f "${repodir}/COPYING" ]; then
+        install -Dm644 "${repodir}/COPYING" "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
     fi
 }
