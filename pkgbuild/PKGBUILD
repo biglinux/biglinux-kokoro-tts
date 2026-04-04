@@ -88,8 +88,20 @@ build() {
     CXXFLAGS="${CXXFLAGS//-D_FORTIFY_SOURCE=?/}"
     export CFLAGS CXXFLAGS
 
-    # Use lld to avoid ld.bfd strict left-to-right archive processing
-    # which causes undefined reference errors for ring, espeak and lame native code
+    # Force CC/CXX/AR to use the distribution-packaged toolchain.
+    # In CI (Manjaro container on Ubuntu runner) the Rust cc crate auto-detects
+    # x86_64-linux-gnu-gcc (Ubuntu's GCC) instead of gcc (Manjaro's GCC).
+    # This mismatch causes ring and espeak-ng native code to be compiled with
+    # the wrong toolchain, producing static archives whose symbols are not
+    # properly bundled into the rlibs → undefined reference errors at link time.
+    export CC=gcc
+    export CXX=g++
+    export AR=ar
+
+    # Tell rustc to use gcc as the linker (not x86_64-linux-gnu-gcc)
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=gcc
+
+    # Use lld for faster linking and relaxed archive ordering
     export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C link-arg=-fuse-ld=lld"
 
     # Force vendored zstd to avoid system static library dependency
