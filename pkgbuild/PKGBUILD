@@ -8,8 +8,8 @@ pkgdesc="Kokoro TTS neural voice for BigLinux accessibility (kokorox Rust + ONNX
 arch=('x86_64')
 url="https://github.com/byteowlz/kokorox"
 license=('GPL-3.0-or-later' 'Apache-2.0')
-depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher')
-makedepends=('rust' 'cargo' 'clang' 'cmake' 'zstd')
+depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher' 'lame')
+makedepends=('rust' 'cargo' 'clang' 'cmake' 'zstd' 'lame' 'lld')
 optdepends=('orca: GNOME screen reader')
 install=biglinux-kokoro-tts.install
 
@@ -88,8 +88,9 @@ build() {
     CXXFLAGS="${CXXFLAGS//-D_FORTIFY_SOURCE=?/}"
     export CFLAGS CXXFLAGS
 
-    # Force GNU linker to avoid link-order issues with ld.lld
-    export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C link-arg=-fuse-ld=bfd"
+    # Use lld to avoid ld.bfd strict left-to-right archive processing
+    # which causes undefined reference errors for ring, espeak and lame native code
+    export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C link-arg=-fuse-ld=lld"
 
     # Force vendored zstd to avoid system static library dependency
     export ZSTD_SYS_USE_PKG_CONFIG=0
