@@ -31,7 +31,10 @@ sha256sums=('SKIP'
             'SKIP'
             'SKIP')
 
-# Backup files (pacman generates .pacnew instead of overwriting)
+# Disable GCC LTO: the cc crate compiles ring/espeak-ng C sources with system
+# CFLAGS; with -flto=auto they become GIMPLE objects that lld/ld cannot link.
+options=('!lto')
+
 backup=('etc/speech-dispatcher/modules/biglinux-kokoro.conf'
         'etc/profile.d/biglinux-kokoro-tts.sh'
         'usr/share/biglinux-kokoro-tts/locale-voice-map.conf')
@@ -77,9 +80,8 @@ EOF
 build() {
     cd "$srcdir/kokorox-${_kokorocommit}"
 
-    # espeak-rs-sys bundles espeak-ng C sources with sprintf buffers that are too
-    # small for _FORTIFY_SOURCE runtime checks → abort during data generation.
-    # Strip _FORTIFY_SOURCE in all common formats from compiler flags.
+    # Strip _FORTIFY_SOURCE — espeak-ng bundled C sources have sprintf buffers
+    # too small for runtime checks → abort during data generation.
     CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=?,-D_GLIBCXX_ASSERTIONS/-D_GLIBCXX_ASSERTIONS}"
     CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=?/}"
     CFLAGS="${CFLAGS//-D_FORTIFY_SOURCE=?/}"
@@ -88,20 +90,7 @@ build() {
     CXXFLAGS="${CXXFLAGS//-D_FORTIFY_SOURCE=?/}"
     export CFLAGS CXXFLAGS
 
-    # Force CC/CXX/AR to use the distribution-packaged toolchain.
-    # In CI (Manjaro container on Ubuntu runner) the Rust cc crate auto-detects
-    # x86_64-linux-gnu-gcc (Ubuntu's GCC) instead of gcc (Manjaro's GCC).
-    # This mismatch causes ring and espeak-ng native code to be compiled with
-    # the wrong toolchain, producing static archives whose symbols are not
-    # properly bundled into the rlibs → undefined reference errors at link time.
-    export CC=gcc
-    export CXX=g++
-    export AR=ar
-
-    # Tell rustc to use gcc as the linker (not x86_64-linux-gnu-gcc)
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=gcc
-
-    # Use lld for faster linking and relaxed archive ordering
+    # Use lld for faster linking
     export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C link-arg=-fuse-ld=lld"
 
     # Force vendored zstd to avoid system static library dependency
