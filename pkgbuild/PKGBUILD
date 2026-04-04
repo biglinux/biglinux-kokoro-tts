@@ -9,7 +9,7 @@ arch=('x86_64')
 url="https://github.com/byteowlz/kokorox"
 license=('GPL-3.0-or-later' 'Apache-2.0')
 depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher')
-makedepends=('rust' 'cargo' 'git' 'clang')
+makedepends=('rust' 'cargo' 'git' 'clang' 'cmake')
 optdepends=('orca: GNOME screen reader')
 install=biglinux-kokoro-tts.install
 
@@ -19,11 +19,11 @@ _model_onnx="kokoro-v${_modelver}.int8.onnx"
 _voices_bin="voices-v${_modelver}.bin"
 
 # ── kokorox version ──
-_kokorover=0.2.2
+_kokorocommit=5d87800
 
 # Sources: kokorox (Rust), ONNX int8 model, full voices (54 voices, 8 languages)
 source=(
-    "kokorox-${_kokorover}.tar.gz::https://github.com/byteowlz/kokorox/archive/refs/tags/v${_kokorover}.tar.gz"
+    "kokorox-${_kokorocommit}.tar.gz::https://github.com/byteowlz/kokorox/archive/${_kokorocommit}.tar.gz"
     "${_model_onnx}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_model_onnx}"
     "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_voices_bin}"
     "git+https://github.com/biglinux/${pkgname}.git"
@@ -39,13 +39,13 @@ backup=('etc/speech-dispatcher/modules/biglinux-kokoro.conf'
         'usr/share/biglinux-kokoro-tts/locale-voice-map.conf')
 
 build() {
-    cd "$srcdir/kokorox-${_kokorover}"
+    cd "$srcdir/kokorox-${_kokorocommit}"*
     cargo build --release
 }
 
 package() {
     # Install build artifacts (before srcdir reassignment)
-    install -Dm755 "$srcdir/kokorox-${_kokorover}/target/release/koko" \
+    install -Dm755 "$srcdir"/kokorox-${_kokorocommit}*/target/release/koko \
         "$pkgdir/usr/bin/koko"
     install -Dm644 "$srcdir/${_model_onnx}" \
         "$pkgdir/usr/share/biglinux-kokoro-tts/model/model.onnx"
