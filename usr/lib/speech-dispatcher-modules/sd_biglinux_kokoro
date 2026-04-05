@@ -62,12 +62,14 @@ speak_kokoro() {
     local tmpwav
     tmpwav=$(mktemp /tmp/biglinux-koko-XXXXXX.wav)
 
-    "$KOKO" text "$text" \
+    # koko requires global options BEFORE the subcommand
+    "$KOKO" \
         -m "$MODEL" \
         -d "$VOICES" \
-        --lan "$lang_code" \
-        --style "$voice" \
-        --force-style \
+        -l "$lang_code" \
+        -s "$voice" \
+        --force-style true \
+        text "$text" \
         -o "$tmpwav" \
         2>/dev/null
 

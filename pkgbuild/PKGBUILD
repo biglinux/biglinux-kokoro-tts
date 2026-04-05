@@ -15,16 +15,27 @@ install=biglinux-kokoro-tts.install
 
 # ── Model version (update here when upstream releases new model) ──
 _modelver=1.0
-_model_onnx="kokoro-v${_modelver}.int8.onnx"
 _voices_bin="voices-v${_modelver}.bin"
+
+# Voices to include: one best voice per supported language (~4 MB instead of ~27 MB)
+_selected_voices=(
+    af_heart    # English (US)
+    ef_dora     # Spanish
+    ff_siwis    # French
+    pf_dora     # Portuguese (BR)
+    if_sara     # Italian
+    jf_alpha    # Japanese
+    hf_alpha    # Hindi
+    zf_xiaobei  # Chinese (Mandarin)
+)
 
 # ── kokorox version ──
 _kokorocommit=5d87800875ef15194aeedcf483e9e0db2c56c87b
 
-# Sources: kokorox (Rust), ONNX int8 model, full voices (54 voices, 8 languages)
+# Sources: kokorox (Rust), ONNX quantized model (onnx-community, 92 MB), full voices (54 voices, 8 languages)
 source=(
     "kokorox-${_kokorocommit}.tar.gz::https://github.com/byteowlz/kokorox/archive/${_kokorocommit}.tar.gz"
-    "${_model_onnx}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_model_onnx}"
+    "model_quantized.onnx::https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_quantized.onnx"
     "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_voices_bin}"
 )
 sha256sums=('SKIP'
@@ -100,12 +111,30 @@ build() {
 }
 
 package() {
+    # Build a minimal voices.bin with only selected voices
+    cd "$srcdir"
+    python -c "
+import zipfile, sys
+src = '${_voices_bin}'
+dst = 'voices-minimal.bin'
+keep = set('${_selected_voices[*]}'.split())
+with zipfile.ZipFile(src, 'r') as zin, zipfile.ZipFile(dst, 'w', zipfile.ZIP_STORED) as zout:
+    for name in zin.namelist():
+        voice = name.replace('.npy', '')
+        if voice in keep:
+            zout.writestr(name, zin.read(name))
+            print(f'  included: {name}')
+        else:
+            print(f'  skipped:  {name}')
+print(f'Reduced voices: {len(keep)} of {len(zin.namelist())} voices')
+"
+
     # Install build artifacts
     install -Dm755 "$srcdir/kokorox-${_kokorocommit}/target/release/koko" \
         "$pkgdir/usr/bin/koko"
-    install -Dm644 "$srcdir/${_model_onnx}" \
+    install -Dm644 "$srcdir/model_quantized.onnx" \
         "$pkgdir/usr/share/biglinux-kokoro-tts/model/model.onnx"
-    install -Dm644 "$srcdir/${_voices_bin}" \
+    install -Dm644 "$srcdir/voices-minimal.bin" \
         "$pkgdir/usr/share/biglinux-kokoro-tts/voices/voices.bin"
 
     # Install config files from repo root (startdir/../ = repo checkout root)
