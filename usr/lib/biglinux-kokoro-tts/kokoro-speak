@@ -1,0 +1,132 @@
+#!/bin/bash
+#
+# kokoro-speak — speech-dispatcher GenericExecuteSynth helper for BigLinux
+# (called by /etc/speech-dispatcher/modules/biglinux-kokoro.conf).
+#
+# It must NOT live in a speech-dispatcher module directory under an "sd_"
+# name: speech-dispatcher's module autodetection runs such files with the
+# module config path as the only argument, and this helper would read that
+# path aloud ("…speech-dispatcher modules biglinux kokoro conf") every time
+# the daemon starts.
+if [[ $# -eq 1 && "$1" == /*.conf ]]; then
+    exit 0
+fi
+#
+# Routes TTS between kokorox (Kokoro) and espeak-ng based on system locale
+#
+# Installed at: /usr/lib/biglinux-kokoro-tts/kokoro-speak
+#
+
+CONFIG="/etc/biglinux-tts/locale-voice-map.conf"
+KOKO="/usr/bin/koko"
+MODEL="/usr/share/biglinux-kokoro-tts/model/model.onnx"
+VOICES="/usr/share/biglinux-kokoro-tts/voices/voices.bin"
+
+# Detect system locale
+SYSTEM_LOCALE="${LANG%%.*}"          # e.g. pt_BR.UTF-8 → pt_BR
+SYSTEM_LOCALE="${SYSTEM_LOCALE%%@*}" # strip @euro etc
+
+# Override with KOKO_LANG if set by speech-dispatcher ($LANGUAGE from SSIP client)
+# KOKO_LANG is a 2-letter code like "pt", "en", "es"
+if [[ -n "$KOKO_LANG" && "$KOKO_LANG" != "nil" && "$KOKO_LANG" != "NULL" ]]; then
+    # Map 2-letter SSIP code to best matching locale in the voice map
+    _match=$(grep -m1 "^${KOKO_LANG}_" "$CONFIG" 2>/dev/null | cut -d= -f1 | tr -d ' ')
+    if [[ -n "$_match" ]]; then
+        SYSTEM_LOCALE="$_match"
+    fi
+fi
+
+# Look up voice config for the given locale
+get_voice_config() {
+    local locale="$1"
+    local entry
+
+    # Try exact locale (e.g. pt_BR)
+    entry=$(grep -m1 "^${locale} " "$CONFIG" 2>/dev/null | sed 's/.*= *//')
+
+    # Try base language only (e.g. pt → match pt_BR)
+    if [[ -z "$entry" ]]; then
+        local lang="${locale%%_*}"
+        entry=$(grep -m1 "^${lang}_" "$CONFIG" 2>/dev/null | sed 's/.*= *//')
+    fi
+
+    # Universal fallback
+    if [[ -z "$entry" ]]; then
+        entry=$(grep -m1 '^\*' "$CONFIG" 2>/dev/null | sed 's/.*= *//')
+    fi
+
+    # Last resort
+    if [[ -z "$entry" ]]; then
+        entry="espeak:en"
+    fi
+
+    echo "$entry"
+}
+
+# Speak using kokorox (koko)
+speak_kokoro() {
+    local text="$1"
+    local voice="$2"
+    local lang_code="$3"
+
+    # The Kokoro model reads at most 510 phoneme tokens at a time and koko
+    # aborts on longer text, so synthesize blocks of up to 220 characters
+    # (split between words) one after the other.
+    local tmpwav chunk
+    tmpwav=$(mktemp /tmp/biglinux-koko-XXXXXX.wav)
+    while IFS= read -r chunk; do
+        [[ -z "${chunk// /}" ]] && continue
+        rm -f "$tmpwav"
+        # koko requires global options BEFORE the subcommand; "--" keeps a
+        # text that starts with "-" from being read as an option.
+        "$KOKO" \
+            -m "$MODEL" \
+            -d "$VOICES" \
+            -l "$lang_code" \
+            -s "$voice" \
+            --force-style true \
+            text -o "$tmpwav" -- "$chunk" >/dev/null \
+            2>/dev/null
+        if [[ -f "$tmpwav" && -s "$tmpwav" ]]; then
+            paplay "$tmpwav" 2>/dev/null || aplay -q "$tmpwav" 2>/dev/null
+        fi
+    done < <(printf '%s\n' "$text" | tr '\n' ' ' | fold -s -w 220; echo)
+    rm -f "$tmpwav"
+}
+
+# Speak using eSpeak-NG
+speak_espeak() {
+    local text="$1"
+    local voice="$2"
+    espeak-ng -v "$voice" "$text" 2>/dev/null
+}
+
+# ─── Main ──────────────────────────────────────────────────
+
+main() {
+    local text="$1"
+
+    # If no argument given, read from stdin
+    if [[ -z "$text" ]]; then
+        read -r text
+    fi
+
+    [[ -z "$text" ]] && exit 0
+
+    local config
+    config=$(get_voice_config "$SYSTEM_LOCALE")
+
+    local engine voice lang_code
+    IFS=':' read -r engine voice lang_code <<< "$config"
+
+    case "$engine" in
+        kokoro)
+            speak_kokoro "$text" "$voice" "$lang_code"
+            ;;
+        espeak|*)
+            speak_espeak "$text" "$voice"
+            ;;
+    esac
+}
+
+main "$@"

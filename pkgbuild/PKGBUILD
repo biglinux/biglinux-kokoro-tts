@@ -1,42 +1,166 @@
-# Maintainer: Barnabé di Kartola <barnabedikartola@gmail.com>
+# Maintainer: Tales A. Mendonça <talesam@gmail.com>
+# Contributor: Rafael Ruscher <rruscher@gmail.com>
+# BigLinux Kokoro TTS — Neural voice for accessibility
 
-pkgname=biglinux-package-template
-pkgdesc="Package template for biglinux"
-# depends=('')
-# makedepends=('')
-# conflicts=('')
+pkgname=biglinux-kokoro-tts
+# Date-based like the other BigLinux packages: a fixed 1.0.0-1 would never
+# upgrade systems that already have the first community build.
 pkgver=$(date +%y.%m.%d)
 pkgrel=$(date +%H%M)
-arch=('any')
-license=('GPL3')
-url="https://github.com/biglinux/$pkgname"
-provides=("$pkgname")
-source=("git+${url}.git")
-md5sums=('SKIP')
-if [ -e "${pkgname}.install" ];then
-    install=${pkgname}.install
-elif [ -e "pkgbuild.install" ];then
-    install=pkgbuild.install
-fi
+pkgdesc="Kokoro TTS neural voice for BigLinux accessibility (kokorox Rust + ONNX)"
+arch=('x86_64')
+url="https://github.com/byteowlz/kokorox"
+license=('GPL-3.0-or-later' 'Apache-2.0')
+depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher' 'lame')
+makedepends=('rust' 'cargo' 'clang' 'cmake' 'zstd' 'lame' 'lld' 'python')
+optdepends=('orca: GNOME screen reader')
+install=biglinux-kokoro-tts.install
+
+# ── Model version (update here when upstream releases new model) ──
+_modelver=1.0
+_voices_bin="voices-v${_modelver}.bin"
+
+# Voices to include: one best voice per supported language (~4 MB instead of ~27 MB)
+_selected_voices=(
+    af_heart    # English (US)
+    ef_dora     # Spanish
+    ff_siwis    # French
+    pf_dora     # Portuguese (BR)
+    if_sara     # Italian
+    jf_alpha    # Japanese
+    hf_alpha    # Hindi
+    zf_xiaobei  # Chinese (Mandarin)
+)
+
+# ── kokorox version ──
+_kokorocommit=5d87800875ef15194aeedcf483e9e0db2c56c87b
+
+# ── Model revision (onnx-community/Kokoro-82M-v1.0-ONNX) ──
+_hf_revision=1939ad2a8e416c0acfeecc08a694d14ef25f2231
+
+# Sources: kokorox 0.2.3 (Rust), ONNX quantized model (onnx-community, 92 MB),
+# full voices (54 voices, 8 languages). All pinned and verified: "main" and
+# "latest" URLs could change content under the same name.
+source=(
+    "kokorox-${_kokorocommit}.tar.gz::https://github.com/byteowlz/kokorox/archive/${_kokorocommit}.tar.gz"
+    "model_quantized.onnx::https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/${_hf_revision}/onnx/model_quantized.onnx"
+    "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v${_modelver}/${_voices_bin}"
+)
+sha256sums=('6145f16ffba814add20eb5e56f0c7a6e6f895c942dadeebb812992b2a23ff56f'
+            'fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478'
+            'bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d')
+
+# Disable GCC LTO: the cc crate compiles ring/espeak-ng C sources with system
+# CFLAGS; with -flto=auto they become GIMPLE objects that lld/ld cannot link.
+options=('!lto')
+
+backup=('etc/speech-dispatcher/modules/biglinux-kokoro.conf'
+        'etc/profile.d/biglinux-kokoro-tts.sh'
+        'usr/share/biglinux-kokoro-tts/locale-voice-map.conf')
+
+prepare() {
+    cd "$srcdir/kokorox-${_kokorocommit}"
+
+    # Vendor crate dependencies locally
+    cargo vendor "$srcdir/vendor"
+
+    # Patch espeak-rs-sys: NYC accent phoneme data causes compile errors
+    # (upstream bug in espeak-rs-sys 0.1.9 — vendored espeak-ng phsource is incompatible)
+    # Remove the phonemetable + include lines from the master phonemes file.
+    local phonemes="$srcdir/vendor/espeak-rs-sys/espeak-ng/phsource/phonemes"
+    if [[ -f "$phonemes" ]]; then
+        sed -i '/^phonemetable en-us-nyc/d; /^include ph_english_us_nyc/d' "$phonemes"
+    fi
+
+    # Patch espeak-rs-sys: increase N_PATH_HOME from 160 to 512
+    # The default 160 bytes is too small for the build path used by cargo/cmake.
+    local speech_h="$srcdir/vendor/espeak-rs-sys/espeak-ng/src/libespeak-ng/speech.h"
+    if [[ -f "$speech_h" ]]; then
+        sed -i 's/#define N_PATH_HOME_DEF  160/#define N_PATH_HOME_DEF  512/' "$speech_h"
+    fi
+
+    # Update checksum so cargo accepts patched vendor files
+    local cksum_file="$srcdir/vendor/espeak-rs-sys/.cargo-checksum.json"
+    if [[ -f "$cksum_file" ]]; then
+        sed -i 's/"files":{[^}]*}/"files":{}/' "$cksum_file"
+    fi
+
+    # Configure cargo to use vendored sources
+    mkdir -p .cargo
+    cat > .cargo/config.toml << EOF
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "$srcdir/vendor"
+EOF
+}
+
+build() {
+    cd "$srcdir/kokorox-${_kokorocommit}"
+
+    # Strip _FORTIFY_SOURCE — espeak-ng bundled C sources have sprintf buffers
+    # too small for runtime checks → abort during data generation.
+    CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=?,-D_GLIBCXX_ASSERTIONS/-D_GLIBCXX_ASSERTIONS}"
+    CFLAGS="${CFLAGS//-Wp,-D_FORTIFY_SOURCE=?/}"
+    CFLAGS="${CFLAGS//-D_FORTIFY_SOURCE=?/}"
+    CXXFLAGS="${CXXFLAGS//-Wp,-D_FORTIFY_SOURCE=?,-D_GLIBCXX_ASSERTIONS/-D_GLIBCXX_ASSERTIONS}"
+    CXXFLAGS="${CXXFLAGS//-Wp,-D_FORTIFY_SOURCE=?/}"
+    CXXFLAGS="${CXXFLAGS//-D_FORTIFY_SOURCE=?/}"
+    export CFLAGS CXXFLAGS
+
+    # Use lld for faster linking
+    export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C link-arg=-fuse-ld=lld"
+
+    # Force vendored zstd to avoid system static library dependency
+    export ZSTD_SYS_USE_PKG_CONFIG=0
+
+    cargo build --release
+}
 
 package() {
-    # Verify default folder
-    if [ -d "${srcdir}/${pkgname}/${pkgname}" ]; then
-        InternalDir="${srcdir}/${pkgname}/${pkgname}"
-    else
-        InternalDir="${srcdir}/${pkgname}"
-    fi
+    # Build a minimal voices.bin with only selected voices
+    cd "$srcdir"
+    python -c "
+import zipfile, sys
+src = '${_voices_bin}'
+dst = 'voices-minimal.bin'
+keep = set('${_selected_voices[*]}'.split())
+with zipfile.ZipFile(src, 'r') as zin, zipfile.ZipFile(dst, 'w', zipfile.ZIP_STORED) as zout:
+    for name in zin.namelist():
+        voice = name.replace('.npy', '')
+        if voice in keep:
+            zout.writestr(name, zin.read(name))
+            print(f'  included: {name}')
+        else:
+            print(f'  skipped:  {name}')
+print(f'Reduced voices: {len(keep)} of {len(zin.namelist())} voices')
+"
 
-    # Copy files
-    if [ -d "${InternalDir}/usr" ]; then
-        cp -r "${InternalDir}/usr" "${pkgdir}/"
-    fi
+    # Install build artifacts
+    install -Dm755 "$srcdir/kokorox-${_kokorocommit}/target/release/koko" \
+        "$pkgdir/usr/bin/koko"
+    install -Dm644 "$srcdir/model_quantized.onnx" \
+        "$pkgdir/usr/share/biglinux-kokoro-tts/model/model.onnx"
+    install -Dm644 "$srcdir/voices-minimal.bin" \
+        "$pkgdir/usr/share/biglinux-kokoro-tts/voices/voices.bin"
 
-    if [ -d "${InternalDir}/etc" ]; then
-        cp -r "${InternalDir}/etc" "${pkgdir}/"
-    fi
+    # Install config files from repo root (startdir/../ = repo checkout root)
+    local repodir="$startdir/.."
+    local dirs=("usr" "etc" "opt")
+    for dir in "${dirs[@]}"; do
+        if [ -d "${repodir}/${dir}" ]; then
+            cp -a "${repodir}/${dir}" "${pkgdir}/"
+        fi
+    done
 
-    if [ -d "${InternalDir}/opt" ]; then
-        cp -r "${InternalDir}/opt" "${pkgdir}/"
+    # Symlink for locale-voice-map.conf convenience path
+    install -dm755 "$pkgdir/etc/biglinux-tts"
+    ln -sf /usr/share/biglinux-kokoro-tts/locale-voice-map.conf \
+        "$pkgdir/etc/biglinux-tts/locale-voice-map.conf"
+
+    # Install license file if present
+    if [ -f "${repodir}/COPYING" ]; then
+        install -Dm644 "${repodir}/COPYING" "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
     fi
 }
