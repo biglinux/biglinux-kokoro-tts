@@ -1,15 +1,18 @@
 # Maintainer: Tales A. Mendonça <talesam@gmail.com>
+# Contributor: Rafael Ruscher <rruscher@gmail.com>
 # BigLinux Kokoro TTS — Neural voice for accessibility
 
 pkgname=biglinux-kokoro-tts
-pkgver=1.0.0
-pkgrel=1
+# Date-based like the other BigLinux packages: a fixed 1.0.0-1 would never
+# upgrade systems that already have the first community build.
+pkgver=$(date +%y.%m.%d)
+pkgrel=$(date +%H%M)
 pkgdesc="Kokoro TTS neural voice for BigLinux accessibility (kokorox Rust + ONNX)"
 arch=('x86_64')
 url="https://github.com/byteowlz/kokorox"
 license=('GPL-3.0-or-later' 'Apache-2.0')
 depends=('onnxruntime' 'espeak-ng' 'speech-dispatcher' 'lame')
-makedepends=('rust' 'cargo' 'clang' 'cmake' 'zstd' 'lame' 'lld')
+makedepends=('rust' 'cargo' 'clang' 'cmake' 'zstd' 'lame' 'lld' 'python')
 optdepends=('orca: GNOME screen reader')
 install=biglinux-kokoro-tts.install
 
@@ -32,15 +35,20 @@ _selected_voices=(
 # ── kokorox version ──
 _kokorocommit=5d87800875ef15194aeedcf483e9e0db2c56c87b
 
-# Sources: kokorox (Rust), ONNX quantized model (onnx-community, 92 MB), full voices (54 voices, 8 languages)
+# ── Model revision (onnx-community/Kokoro-82M-v1.0-ONNX) ──
+_hf_revision=1939ad2a8e416c0acfeecc08a694d14ef25f2231
+
+# Sources: kokorox 0.2.3 (Rust), ONNX quantized model (onnx-community, 92 MB),
+# full voices (54 voices, 8 languages). All pinned and verified: "main" and
+# "latest" URLs could change content under the same name.
 source=(
     "kokorox-${_kokorocommit}.tar.gz::https://github.com/byteowlz/kokorox/archive/${_kokorocommit}.tar.gz"
-    "model_quantized.onnx::https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_quantized.onnx"
-    "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/latest/download/${_voices_bin}"
+    "model_quantized.onnx::https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/${_hf_revision}/onnx/model_quantized.onnx"
+    "${_voices_bin}::https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v${_modelver}/${_voices_bin}"
 )
-sha256sums=('SKIP'
-            'SKIP'
-            'SKIP')
+sha256sums=('6145f16ffba814add20eb5e56f0c7a6e6f895c942dadeebb812992b2a23ff56f'
+            'fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478'
+            'bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d')
 
 # Disable GCC LTO: the cc crate compiles ring/espeak-ng C sources with system
 # CFLAGS; with -flto=auto they become GIMPLE objects that lld/ld cannot link.

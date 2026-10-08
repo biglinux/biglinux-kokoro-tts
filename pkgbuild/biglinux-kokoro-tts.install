@@ -12,8 +12,10 @@ printMsg() {
     echo -e "${blueDark}[${lightBlue}biglinux-kokoro-tts${blueDark}]${reset} ${cyan}→${reset} ${white}${message}${reset}"
 }
 
-post_install() {
-    # Register biglinux-kokoro module in speech-dispatcher
+register_module() {
+    # Register the biglinux-kokoro module in speech-dispatcher (idempotent:
+    # also run on upgrade, so systems coming from a build that never
+    # registered it get the module too).
     local conf="/etc/speech-dispatcher/speechd.conf"
     if [[ -f "$conf" ]]; then
         if ! grep -q 'AddModule "biglinux-kokoro"' "$conf" 2>/dev/null; then
@@ -25,6 +27,10 @@ post_install() {
             sed -i '/^# DefaultModule/a\DefaultModule biglinux-kokoro' "$conf"
         fi
     fi
+}
+
+post_install() {
+    register_module
 
     printMsg "Kokoro TTS installed successfully!"
     printMsg ""
@@ -38,6 +44,7 @@ post_install() {
 }
 
 post_upgrade() {
+    register_module
     printMsg "Kokoro TTS updated."
     printMsg "Check for .pacnew files in /etc/speech-dispatcher/modules/"
 }

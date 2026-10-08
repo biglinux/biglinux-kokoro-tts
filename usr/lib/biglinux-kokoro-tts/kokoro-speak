@@ -1,9 +1,20 @@
 #!/bin/bash
 #
-# sd_biglinux_kokoro — Speech-dispatcher module for BigLinux
+# kokoro-speak — speech-dispatcher GenericExecuteSynth helper for BigLinux
+# (called by /etc/speech-dispatcher/modules/biglinux-kokoro.conf).
+#
+# It must NOT live in a speech-dispatcher module directory under an "sd_"
+# name: speech-dispatcher's module autodetection runs such files with the
+# module config path as the only argument, and this helper would read that
+# path aloud ("…speech-dispatcher modules biglinux kokoro conf") every time
+# the daemon starts.
+if [[ $# -eq 1 && "$1" == /*.conf ]]; then
+    exit 0
+fi
+#
 # Routes TTS between kokorox (Kokoro) and espeak-ng based on system locale
 #
-# Installed at: /usr/lib/speech-dispatcher-modules/sd_biglinux_kokoro
+# Installed at: /usr/lib/biglinux-kokoro-tts/kokoro-speak
 #
 
 CONFIG="/etc/biglinux-tts/locale-voice-map.conf"
@@ -58,24 +69,28 @@ speak_kokoro() {
     local voice="$2"
     local lang_code="$3"
 
-    # Generate WAV with koko, then play via paplay or aplay
-    local tmpwav
+    # The Kokoro model reads at most 510 phoneme tokens at a time and koko
+    # aborts on longer text, so synthesize blocks of up to 220 characters
+    # (split between words) one after the other.
+    local tmpwav chunk
     tmpwav=$(mktemp /tmp/biglinux-koko-XXXXXX.wav)
-
-    # koko requires global options BEFORE the subcommand
-    "$KOKO" \
-        -m "$MODEL" \
-        -d "$VOICES" \
-        -l "$lang_code" \
-        -s "$voice" \
-        --force-style true \
-        text "$text" \
-        -o "$tmpwav" \
-        2>/dev/null
-
-    if [[ -f "$tmpwav" && -s "$tmpwav" ]]; then
-        paplay "$tmpwav" 2>/dev/null || aplay -q "$tmpwav" 2>/dev/null
-    fi
+    while IFS= read -r chunk; do
+        [[ -z "${chunk// /}" ]] && continue
+        rm -f "$tmpwav"
+        # koko requires global options BEFORE the subcommand; "--" keeps a
+        # text that starts with "-" from being read as an option.
+        "$KOKO" \
+            -m "$MODEL" \
+            -d "$VOICES" \
+            -l "$lang_code" \
+            -s "$voice" \
+            --force-style true \
+            text -o "$tmpwav" -- "$chunk" >/dev/null \
+            2>/dev/null
+        if [[ -f "$tmpwav" && -s "$tmpwav" ]]; then
+            paplay "$tmpwav" 2>/dev/null || aplay -q "$tmpwav" 2>/dev/null
+        fi
+    done < <(printf '%s\n' "$text" | tr '\n' ' ' | fold -s -w 220; echo)
     rm -f "$tmpwav"
 }
 
