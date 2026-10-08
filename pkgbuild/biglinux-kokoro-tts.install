@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# biglinux-kokoro-tts.install — Package install hooks
+
+blueDark="\e[1;38;5;33m"
+lightBlue="\e[1;38;5;39m"
+cyan="\e[1;38;5;45m"
+white="\e[1;97m"
+reset="\e[0m"
+
+printMsg() {
+    local message=$1
+    echo -e "${blueDark}[${lightBlue}biglinux-kokoro-tts${blueDark}]${reset} ${cyan}→${reset} ${white}${message}${reset}"
+}
+
+register_module() {
+    # Register the biglinux-kokoro module in speech-dispatcher (idempotent:
+    # also run on upgrade, so systems coming from a build that never
+    # registered it get the module too).
+    local conf="/etc/speech-dispatcher/speechd.conf"
+    if [[ -f "$conf" ]]; then
+        if ! grep -q 'AddModule "biglinux-kokoro"' "$conf" 2>/dev/null; then
+            sed -i '/^# AddModule "testing"/a\\nAddModule "biglinux-kokoro" "sd_generic" "biglinux-kokoro.conf"' "$conf"
+        fi
+        if grep -q '^# DefaultModule espeak-ng' "$conf" 2>/dev/null; then
+            sed -i 's/^# DefaultModule espeak-ng/DefaultModule biglinux-kokoro/' "$conf"
+        elif ! grep -q '^DefaultModule' "$conf" 2>/dev/null; then
+            sed -i '/^# DefaultModule/a\DefaultModule biglinux-kokoro' "$conf"
+        fi
+    fi
+}
+
+post_install() {
+    register_module
+
+    printMsg "Kokoro TTS installed successfully!"
+    printMsg ""
+    printMsg "Speech-dispatcher configured to use Kokoro as default module."
+    printMsg ""
+    printMsg "To test (open a new terminal):"
+    printMsg "  koko -l pt-br -s pf_dora text 'Hello, welcome to BigLinux!'"
+    printMsg ""
+    printMsg "Neural voice languages: en_US, en_GB, es_ES, fr_FR, pt_BR, it_IT, ja_JP, hi_IN, zh_CN"
+    printMsg "Other languages use eSpeak-NG as fallback."
+}
+
+post_upgrade() {
+    register_module
+    printMsg "Kokoro TTS updated."
+    printMsg "Check for .pacnew files in /etc/speech-dispatcher/modules/"
+}
+
+pre_remove() {
+    printMsg "Removing Kokoro TTS..."
+}
+
+post_remove() {
+    # Remove biglinux-kokoro from speech-dispatcher config
+    local conf="/etc/speech-dispatcher/speechd.conf"
+    if [[ -f "$conf" ]]; then
+        sed -i '/^AddModule "biglinux-kokoro"/d' "$conf"
+        if grep -q '^DefaultModule biglinux-kokoro' "$conf" 2>/dev/null; then
+            sed -i 's/^DefaultModule biglinux-kokoro/# DefaultModule espeak-ng/' "$conf"
+        fi
+    fi
+    printMsg "Kokoro TTS removed. Speech-dispatcher reverted to espeak-ng."
+}
+
